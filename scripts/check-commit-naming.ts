@@ -1,7 +1,6 @@
 // import { fetch, setGlobalDispatcher, ProxyAgent } from 'undici'
 // setGlobalDispatcher(new ProxyAgent('http://127.0.0.1:8080'));
 import { spawnSync } from 'node:child_process';
-import { sign } from 'jsonwebtoken';
 import { createWriteStream, constants } from 'node:fs';
 
 const {
@@ -10,7 +9,7 @@ const {
   GITHUB_REPOSITORY,
   GITHUB_TOKEN,
   GITHUB_HEAD_REF,
-  PRIVATE_KEY,
+  JWT,
 } =
   process.env;
 
@@ -34,21 +33,21 @@ const run = async () => {
   // const stdout1 = JSON.parse(checkCommitLint.stdout.toString() || '[]');
   // const stdout2 = JSON.parse(checkCustom.stdout.toString() || '[]');
 
-  const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + 600;
-
-  const jwtToken = sign({
-    exp,
-    iat,
-    iss,
-  }, PRIVATE_KEY, { algorithm: 'RS256' });
+  // const iat = Math.floor(Date.now() / 1000);
+  // const exp = iat + 600;
+  //
+  // const jwtToken = sign({
+  //   exp,
+  //   iat,
+  //   iss,
+  // }, PRIVATE_KEY, { algorithm: 'RS256' });
 
 
   const installationResponse = await fetch(
     `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/installation`,
     {
       headers: {
-        Authorization: `Bearer ${jwtToken}`,
+        Authorization: `Bearer ${JWT}`,
         'Content-Type': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
       },
