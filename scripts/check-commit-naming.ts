@@ -1,8 +1,9 @@
 // import { fetch, setGlobalDispatcher, ProxyAgent } from 'undici'
 // setGlobalDispatcher(new ProxyAgent('http://127.0.0.1:8080'));
 import { spawnSync } from 'node:child_process';
+import { createWriteStream, constants } from 'node:fs';
 
-const { GITHUB_API_URL, GITHUB_REPOSITORY, GITHUB_TOKEN, GITHUB_HEAD_REF } =
+const { GITHUB_STEP_SUMMARY, GITHUB_API_URL, GITHUB_REPOSITORY, GITHUB_TOKEN, GITHUB_HEAD_REF } =
   process.env;
 
 const dir = process.cwd();
@@ -86,4 +87,13 @@ const run = async () => {
   console.log(body);
 };
 
-void run();
+// void run();
+
+process.stdout.write('::error file=src/index.ts,line=1,col=1,endColumn=7,title=ERRR::Message Error\n');
+process.stdout.write('::warning file=src/index.ts,line=1,col=1,endColumn=7,title=Warn::Message Warning\n');
+
+const stream = createWriteStream(GITHUB_STEP_SUMMARY, { mode: constants.O_APPEND, encoding: 'utf8' })
+
+stream.write('### Hello world! :rocket:');
+
+stream.end();
