@@ -23,6 +23,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - run: node --experimental-strip-types --experimental-transform-types --no-warnings=ExperimentalWarnings scripts/check-commit-naming.ts
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Test warning
+        run: echo "::warning file=src/index.ts,line=1,col=1,endColumn=7,rawMessage=Raw message,title=Warning::Message"
+#      - run: node --experimental-strip-types --experimental-transform-types --no-warnings=ExperimentalWarnings scripts/check-commit-naming.ts
+#        env:
+#          GITHUB_TOKEN: ${{ github.token }}

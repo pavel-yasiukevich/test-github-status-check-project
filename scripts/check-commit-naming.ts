@@ -24,7 +24,7 @@ const run = async () => {
   // const stdout2 = JSON.parse(checkCustom.stdout.toString() || '[]');
 
   const allJobsResponse = await fetch(
-    `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_HEAD_REF}/check-runs`,
+    `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/commits/main/check-runs`,
     {
       headers: {
         Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -34,13 +34,15 @@ const run = async () => {
     },
   );
 
-  const allJobsResult = await allJobsResponse.json();
+  const allJobsResult: any = await allJobsResponse.json();
 
-  const firstJob = allJobsResult.check_runs.reduce((item, v) => {
-    return v;
+  console.log(allJobsResult);
+
+  const latestJob = allJobsResult.check_runs?.reduce((result, item) => {
+    return result.id < item.id ? item : result;
   });
 
-  const GITHUB_JOB_ID = firstJob.id;
+  const GITHUB_JOB_ID = latestJob.id;
 
   const url = `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/check-runs/${GITHUB_JOB_ID}`;
 
@@ -53,20 +55,11 @@ const run = async () => {
         annotations: [
           {
             annotation_level: 'warning',
-            end_line: 2,
+            end_line: 1,
             message: "Check your spelling for '\''banaas'\''.",
-            path: 'README.md',
+            path: 'src/index.ts',
             raw_details: "Do you mean '\''bananas'\'' or '\''banana'\''?",
-            start_line: 2,
-            title: 'Spell Checker',
-          },
-          {
-            annotation_level: 'warning',
-            end_line: 4,
-            message: "Check your spelling for '\''aples'\''",
-            path: 'README.md',
-            raw_details: "Do you mean '\''apples'\'' or '\''Naples'\''",
-            start_line: 4,
+            start_line: 1,
             title: 'Spell Checker',
           },
         ],
@@ -77,7 +70,7 @@ const run = async () => {
         text: 'You may have some misspelled words on lines 2 and 4. You also may want to add a section in your README about how to install your app.',
         title: 'Mighty Readme report',
       },
-      started_at: '2018-05-04T01:14:52Z',
+      started_at: '2025-05-04T01:14:52Z',
       status: 'completed',
     }),
     headers: {
