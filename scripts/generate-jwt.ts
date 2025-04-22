@@ -13,7 +13,7 @@ const run = async () => {
   const key = await readFile(keyPath, 'utf8');
 
   const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + 900;
+  const exp = iat + 600;
 
   const token = sign({
     exp,
