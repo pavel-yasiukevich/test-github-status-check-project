@@ -1,15 +1,13 @@
-// import { fetch, setGlobalDispatcher, ProxyAgent } from 'undici'
-// setGlobalDispatcher(new ProxyAgent('http://127.0.0.1:8080'));
 import { spawnSync } from 'node:child_process';
 import { createWriteStream, constants } from 'node:fs';
+import { signJWT } from './_jwt.ts';
 
 const {
-  GITHUB_STEP_SUMMARY,
+  GITHUB_STEP_SUMMARY = '/dev/null',
   GITHUB_API_URL,
   GITHUB_REPOSITORY,
-  GITHUB_TOKEN,
   GITHUB_HEAD_REF,
-  JWT,
+  PRIVATE_KEY = '',
 } =
   process.env;
 
@@ -33,15 +31,14 @@ const run = async () => {
   // const stdout1 = JSON.parse(checkCommitLint.stdout.toString() || '[]');
   // const stdout2 = JSON.parse(checkCustom.stdout.toString() || '[]');
 
-  // const iat = Math.floor(Date.now() / 1000);
-  // const exp = iat + 600;
-  //
-  // const jwtToken = sign({
-  //   exp,
-  //   iat,
-  //   iss,
-  // }, PRIVATE_KEY, { algorithm: 'RS256' });
+  const iat = Math.floor(Date.now() / 1000);
+  const exp = iat + 600;
 
+  const JWT = signJWT({
+    exp,
+    iat,
+    iss,
+  }, PRIVATE_KEY);
 
   const installationResponse = await fetch(
     `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/installation`,
@@ -60,6 +57,14 @@ const run = async () => {
 
   const accessTokenResponse: any =  await fetch(
     `${GITHUB_API_URL}/app/installations/${id}/access_tokens`,
+    {
+      headers: {
+        Authorization: `Bearer ${JWT}`,
+        'Content-Type': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      method: 'POST',
+    }
   );
 
   const accessTokenBody = await accessTokenResponse.json();
@@ -93,6 +98,7 @@ const run = async () => {
         title: 'Mighty Readme report',
       },
       started_at: '2025-05-04T01:14:52Z',
+      head_sha: GITHUB_HEAD_REF,
       status: 'completed',
     }),
     headers: {
@@ -112,12 +118,12 @@ const run = async () => {
 
 void run();
 
-// process.stdout.write('::error file=src/index.ts,line=1,col=1,endColumn=7,title=ERRR::Message Error\n');
-// process.stdout.write('::warning file=src/index.ts,line=1,col=1,endColumn=7,title=Warn::Message Warning\n');
-//
-// const stream = createWriteStream(GITHUB_STEP_SUMMARY, { mode: constants.O_APPEND, encoding: 'utf8' })
-//
-// stream.write('### Hello world! :rocket:');
+process.stdout.write('::error file=src/index.ts,line=1,col=1,endColumn=7,title=ERRR::Message Error\n');
+process.stdout.write('::warning file=src/index.ts,line=1,col=1,endColumn=7,title=Warn::Message Warning\n');
+
+const stream = createWriteStream(GITHUB_STEP_SUMMARY, { mode: constants.O_APPEND, encoding: 'utf8' })
+
+stream.write('### Hello world! :rocket:');
 //
 // stream.end(() => {
 //   process.exit(78);
