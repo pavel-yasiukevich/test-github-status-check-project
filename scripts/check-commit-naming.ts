@@ -96,4 +96,6 @@ const stream = createWriteStream(GITHUB_STEP_SUMMARY, { mode: constants.O_APPEND
 
 stream.write('### Hello world! :rocket:');
 
-stream.end();
+stream.end(() => {
+  process.exit(78);
+});
