@@ -1,11 +1,19 @@
-// import { fetch, setGlobalDispatcher, ProxyAgent } from 'undici'
-// setGlobalDispatcher(new ProxyAgent('http://127.0.0.1:8080'));
 import { spawnSync } from 'node:child_process';
+import { createWriteStream, constants } from 'node:fs';
+import { signJWT } from './_jwt.ts';
 
-const { GITHUB_API_URL, GITHUB_REPOSITORY, GITHUB_TOKEN, GITHUB_HEAD_REF } =
+const {
+  GITHUB_STEP_SUMMARY = '/dev/null',
+  GITHUB_API_URL,
+  GITHUB_REPOSITORY,
+  GITHUB_HEAD_REF,
+  PRIVATE_KEY = '',
+} =
   process.env;
 
 const dir = process.cwd();
+
+const iss = 'Iv23liv5rZjg3yTacx8x'
 
 const node = (script: string) => {
   return spawnSync('node', [
@@ -23,28 +31,47 @@ const run = async () => {
   // const stdout1 = JSON.parse(checkCommitLint.stdout.toString() || '[]');
   // const stdout2 = JSON.parse(checkCustom.stdout.toString() || '[]');
 
-  const allJobsResponse = await fetch(
-    `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/commits/main/check-runs`,
+  const iat = Math.floor(Date.now() / 1000);
+  const exp = iat + 600;
+
+  const JWT = signJWT({
+    exp,
+    iat,
+    iss,
+  }, PRIVATE_KEY);
+
+  const installationResponse = await fetch(
+    `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/installation`,
     {
       headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${JWT}`,
+        'Content-Type': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
       },
-    },
+    }
   );
 
-  const allJobsResult: any = await allJobsResponse.json();
+  const installationBody = await installationResponse.json();
 
-  console.log(allJobsResult);
+  const { id }: any = installationBody;
 
-  const latestJob = allJobsResult.check_runs?.reduce((result, item) => {
-    return result.id < item.id ? item : result;
-  });
+  const accessTokenResponse: any =  await fetch(
+    `${GITHUB_API_URL}/app/installations/${id}/access_tokens`,
+    {
+      headers: {
+        Authorization: `Bearer ${JWT}`,
+        'Content-Type': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      method: 'POST',
+    }
+  );
 
-  const GITHUB_JOB_ID = latestJob.id;
+  const accessTokenBody = await accessTokenResponse.json();
 
-  const url = `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/check-runs/${GITHUB_JOB_ID}`;
+  const { token }: any = accessTokenBody;
+
+  const url = `${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/check-runs`;
 
   const response = await fetch(url, {
     body: JSON.stringify({
@@ -71,19 +98,33 @@ const run = async () => {
         title: 'Mighty Readme report',
       },
       started_at: '2025-05-04T01:14:52Z',
+      head_sha: GITHUB_HEAD_REF,
       status: 'completed',
     }),
     headers: {
-      Authorization: `Bearer ${GITHUB_TOKEN}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     },
-    method: 'PATCH',
+    method: 'POST',
   });
 
   const body = await response.json();
 
+  console.log(installationBody);
+  console.log(accessTokenBody);
   console.log(body);
 };
 
 void run();
+
+process.stdout.write('::error file=src/index.ts,line=1,col=1,endColumn=7,title=ERRR::Message Error\n');
+process.stdout.write('::warning file=src/index.ts,line=1,col=1,endColumn=7,title=Warn::Message Warning\n');
+
+const stream = createWriteStream(GITHUB_STEP_SUMMARY, { mode: constants.O_APPEND, encoding: 'utf8' })
+
+stream.write('### Hello world! :rocket:');
+//
+// stream.end(() => {
+//   process.exit(78);
+// });

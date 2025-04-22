@@ -23,8 +23,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - name: Test warning
-        run: echo "::warning file=src/index.ts,line=1,col=1,endColumn=7,rawMessage=Raw message,title=Warning::Message"
-#      - run: node --experimental-strip-types --experimental-transform-types --no-warnings=ExperimentalWarnings scripts/check-commit-naming.ts
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
+      - name: Generate JWT
+        run: echo "JWT=$(bash scripts/generate-jwt.sh)" >> "$GITHUB_ENV"
+      - run: node --experimental-strip-types --experimental-transform-types --no-warnings=ExperimentalWarnings scripts/check-commit-naming.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
